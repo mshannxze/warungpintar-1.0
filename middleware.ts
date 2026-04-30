@@ -11,10 +11,18 @@ const PROTECTED_PREFIXES = [
     "/users",
 ];
 
+const PUBLIC_PREFIXES = ["/demo"];
+
 export async function middleware(req: NextRequest) {
     const res = NextResponse.next({ request: req });
 
     const { pathname } = req.nextUrl;
+
+    const isPublicDemo = PUBLIC_PREFIXES.some(
+        (p) => pathname === p || pathname.startsWith(`${p}/`),
+    );
+    if (isPublicDemo) return res;
+
     const isProtected = PROTECTED_PREFIXES.some(
         (p) => pathname === p || pathname.startsWith(`${p}/`),
     );

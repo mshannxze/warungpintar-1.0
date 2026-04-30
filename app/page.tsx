@@ -156,10 +156,10 @@ export default function Home() {
             </div>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Button asChild size="lg">
-                <Link href="/dashboard">Lihat Dashboard Demo</Link>
+                <Link href="/demo/dashboard">Lihat Dashboard Demo</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/pos">Buka Halaman POS</Link>
+                <Link href="/demo/pos">Buka Halaman POS</Link>
               </Button>
             </div>
           </Card>

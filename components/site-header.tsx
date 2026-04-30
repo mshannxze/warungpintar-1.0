@@ -15,6 +15,8 @@ const titles: Record<string, string> = {
   "/transactions": "Riwayat Transaksi",
   "/reports": "Laporan Penjualan",
   "/users": "Manajemen Pengguna",
+  "/demo/dashboard": "Dashboard (Demo)",
+  "/demo/pos": "Point of Sale (Demo)",
 }
 
 export function SiteHeader() {
