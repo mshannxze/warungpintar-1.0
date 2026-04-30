@@ -95,11 +95,27 @@ export class UserService {
         if (id === ctx.userId) {
             throw new HttpError(400, "Tidak bisa menghapus akun sendiri");
         }
-        const result = await db
-            .delete(userTable)
-            .where(eq(userTable.id, id))
-            .returning();
-        if (!result.length) throw new HttpError(404, "Pengguna tidak ditemukan");
+
+        // Local DB is the source of truth — verify existence first
+        const [existing] = await db
+            .select({ id: userTable.id })
+            .from(userTable)
+            .where(eq(userTable.id, id));
+        if (!existing) throw new HttpError(404, "Pengguna tidak ditemukan");
+
+        await db.delete(userTable).where(eq(userTable.id, id));
+
+        // Best-effort: revoke Supabase Auth credentials so the user cannot log back in.
+        // Errors are intentionally ignored — the local DB record is already gone.
+        // Non-UUID ids belong to the legacy auth system and have no Supabase Auth record.
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        if (isUuid) {
+            try {
+                await createAdminClient().auth.admin.deleteUser(id);
+            } catch {
+                // ignore
+            }
+        }
     }
 }
 
