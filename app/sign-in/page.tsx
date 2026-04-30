@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,6 @@ function SignInForm() {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
-    const router = useRouter();
     const searchParams = useSearchParams();
 
     const redirect = searchParams.get("redirect") ?? "/dashboard";
@@ -40,8 +39,7 @@ function SignInForm() {
             if (result.error) {
                 setError(result.error.message || "Sign in failed");
             } else {
-                router.push(redirect);
-                router.refresh();
+                window.location.href = redirect;
             }
         } catch {
             setError("An unexpected error occurred");
