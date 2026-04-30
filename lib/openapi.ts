@@ -70,16 +70,17 @@ export function buildOpenApiSpec(): OpenAPISpec {
         openapi: "3.0.3",
         info: {
             title: "Warung Madura API",
-            version: "0.2.0",
+            version: "1.0.0",
             description:
-                "REST API untuk aplikasi POS & manajemen stok Warung Madura. " +
-                "Semua endpoint mengembalikan envelope `{ data }` (sukses) atau " +
-                "`{ error: { message, details? } }` (gagal). Otentikasi memakai " +
-                "cookie sesi BetterAuth.",
+                "REST API untuk aplikasi POS & manajemen stok Warung Madura.\n\n" +
+                "**Autentikasi**: Gunakan Supabase Auth (sign-in via UI `/sign-in`). " +
+                "Setelah login, cookie sesi Supabase dikirim otomatis pada setiap request. " +
+                "Untuk testing dari Swagger UI, pastikan Anda sudah login di tab lain terlebih dahulu.\n\n" +
+                "**Response envelope**: Sukses `{ \"data\": <payload> }` · Gagal `{ \"error\": { \"message\", \"details\"? } }`",
         },
         servers: [{ url: "/", description: "Current host" }],
         tags: [
-            { name: "Auth", description: "Autentikasi BetterAuth" },
+            { name: "Auth", description: "Autentikasi Supabase Auth" },
             { name: "Categories", description: "Kategori produk" },
             { name: "Products", description: "Produk warung" },
             { name: "Suppliers", description: "Pemasok / supplier" },
@@ -94,7 +95,9 @@ export function buildOpenApiSpec(): OpenAPISpec {
                 cookieAuth: {
                     type: "apiKey",
                     in: "cookie",
-                    name: "better-auth.session_token",
+                    name: "sb-kwtoxrsxjwfwjvpmjxvi-auth-token",
+                    description:
+                        "Cookie sesi Supabase. Dikirim otomatis setelah login via `/sign-in`.",
                 },
             },
             responses: commonResponses,
@@ -374,34 +377,64 @@ export function buildOpenApiSpec(): OpenAPISpec {
         },
         security: [{ cookieAuth: [] }],
         paths: {
-            "/api/auth/sign-up/email": {
-                post: {
-                    tags: ["Auth"],
-                    summary: "Daftar via BetterAuth",
-                    security: [],
-                    responses: { "200": { description: "OK" } },
-                },
-            },
-            "/api/auth/sign-in/email": {
-                post: {
-                    tags: ["Auth"],
-                    summary: "Login",
-                    security: [],
-                    responses: { "200": { description: "OK" } },
-                },
-            },
-            "/api/auth/sign-out": {
-                post: {
-                    tags: ["Auth"],
-                    summary: "Logout",
-                    responses: { "200": { description: "OK" } },
-                },
-            },
-            "/api/auth/get-session": {
+            "/sign-in": {
                 get: {
                     tags: ["Auth"],
-                    summary: "Sesi aktif",
-                    responses: { "200": { description: "OK" } },
+                    summary: "Halaman login (UI)",
+                    description:
+                        "Halaman sign-in berbasis Supabase Auth. Login di sini sebelum menggunakan endpoint yang memerlukan autentikasi.",
+                    security: [],
+                    responses: { "200": { description: "HTML halaman login" } },
+                },
+            },
+            "/sign-up": {
+                get: {
+                    tags: ["Auth"],
+                    summary: "Halaman registrasi (UI)",
+                    security: [],
+                    responses: { "200": { description: "HTML halaman registrasi" } },
+                },
+            },
+            "/api/auth/profile": {
+                post: {
+                    tags: ["Auth"],
+                    summary: "Sinkronisasi profil setelah sign-up",
+                    description:
+                        "Membuat atau mengambil profil user di database setelah Supabase Auth berhasil. " +
+                        "Dipanggil otomatis oleh UI setelah sign-up; tidak perlu dipanggil manual.",
+                    responses: {
+                        "200": {
+                            description: "Profil user",
+                            content: {
+                                "application/json": {
+                                    schema: dataResponse({ $ref: "#/components/schemas/User" }),
+                                },
+                            },
+                        },
+                        ...stdErrorRefs,
+                    },
+                },
+            },
+            "/auth/callback": {
+                get: {
+                    tags: ["Auth"],
+                    summary: "Callback konfirmasi email",
+                    description:
+                        "Supabase mengarahkan ke sini setelah pengguna mengklik link konfirmasi email. " +
+                        "Menukar code menjadi sesi lalu redirect ke `/dashboard`.",
+                    security: [],
+                    parameters: [
+                        {
+                            name: "code",
+                            in: "query",
+                            required: true,
+                            schema: { type: "string" },
+                            description: "Authorization code dari Supabase",
+                        },
+                    ],
+                    responses: {
+                        "302": { description: "Redirect ke /dashboard atau /sign-in?error=..." },
+                    },
                 },
             },
 

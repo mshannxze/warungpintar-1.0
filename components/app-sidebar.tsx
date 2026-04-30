@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession } from "@/lib/auth-client"
 import {
+  IconApi,
   IconBoxSeam,
   IconCash,
   IconChartBar,
@@ -44,6 +45,7 @@ const navSecondary = [
   { title: "Pengaturan", url: "#", icon: IconSettings },
   { title: "Bantuan", url: "#", icon: IconHelp },
   { title: "Cari", url: "#", icon: IconSearch },
+  { title: "API Docs", url: "/api-docs", icon: IconApi },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

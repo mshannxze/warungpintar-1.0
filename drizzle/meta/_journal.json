@@ -15,6 +15,13 @@
       "when": 1777434158340,
       "tag": "0001_special_mauler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777539870423,
+      "tag": "0002_init",
+      "breakpoints": true
     }
   ]
 }

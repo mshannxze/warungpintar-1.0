@@ -1,56 +1,35 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Banknote,
-  Receipt,
-  TrendingUp,
-  AlertTriangle,
-} from "lucide-react";
-import { products, transactions } from "@/lib/warung/mock-data";
+import { Banknote, Receipt, TrendingUp, AlertTriangle } from "lucide-react";
+import type { DashboardReport } from "@/lib/warung/api";
 import { formatRupiah, formatNumber } from "@/lib/warung/format";
 
-function isToday(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-}
-
-export function DashboardKpis() {
-  const todayTrx = transactions.filter(
-    (t) => isToday(t.createdAt) && t.status === "completed",
-  );
-  const totalSalesToday = todayTrx.reduce((s, t) => s + t.totalAmount, 0);
-  const totalCostToday = todayTrx.reduce((s, t) => s + t.totalCost, 0);
-  const grossProfitToday = totalSalesToday - totalCostToday;
-  const lowStock = products.filter((p) => p.currentStock <= p.minStock).length;
+export function DashboardKpis({ data }: { data: DashboardReport }) {
+  const { today, lowStockCount } = data;
 
   const kpis = [
     {
       label: "Penjualan Hari Ini",
-      value: formatRupiah(totalSalesToday),
+      value: formatRupiah(today.totalSales),
       icon: Banknote,
       tone: "text-emerald-600 bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400",
     },
     {
       label: "Transaksi Hari Ini",
-      value: formatNumber(todayTrx.length),
+      value: formatNumber(today.transactionCount),
       icon: Receipt,
       tone: "text-sky-600 bg-sky-100 dark:bg-sky-500/15 dark:text-sky-400",
     },
     {
       label: "Laba Kotor Hari Ini",
-      value: formatRupiah(grossProfitToday),
+      value: formatRupiah(today.grossProfit),
       icon: TrendingUp,
       tone: "text-violet-600 bg-violet-100 dark:bg-violet-500/15 dark:text-violet-400",
     },
     {
       label: "Stok Menipis",
-      value: `${lowStock} produk`,
+      value: `${lowStockCount} produk`,
       icon: AlertTriangle,
       tone: "text-amber-700 bg-amber-100 dark:bg-amber-500/15 dark:text-amber-400",
     },
@@ -66,9 +45,7 @@ export function DashboardKpis() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground">{kpi.label}</p>
-              <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">
-                {kpi.value}
-              </p>
+              <p className="text-xl sm:text-2xl font-bold mt-1 tracking-tight">{kpi.value}</p>
             </div>
           </CardContent>
         </Card>

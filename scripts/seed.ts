@@ -1,9 +1,17 @@
 import "dotenv/config";
 import { eq } from "drizzle-orm";
+import { createClient } from "@supabase/supabase-js";
 import { db } from "@/db";
 import { categories, products, suppliers } from "@/db/schema/warung";
 import { user as userTable } from "@/db/schema/auth";
-import { auth } from "@/lib/auth";
+
+function createAdminClient() {
+    return createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+}
 
 const SEED_OWNER_EMAIL = process.env.SEED_OWNER_EMAIL ?? "owner@warungmadura.id";
 const SEED_OWNER_PASSWORD =
@@ -32,15 +40,23 @@ async function ensureUser(
         console.log(`✓ user exists: ${email}`);
         return existing.id;
     }
-    const result = await auth.api.signUpEmail({
-        body: { email, password, name },
+    const admin = createAdminClient();
+    const { data, error } = await admin.auth.admin.createUser({
+        email,
+        password,
+        user_metadata: { name },
+        email_confirm: true,
     });
-    const id = result.user?.id;
-    if (!id) throw new Error(`Failed to create ${email}`);
-    await db
-        .update(userTable)
-        .set({ role, isActive: true })
-        .where(eq(userTable.id, id));
+    if (error) throw new Error(`Failed to create ${email}: ${error.message}`);
+    const id = data.user.id;
+    await db.insert(userTable).values({
+        id,
+        name,
+        email,
+        emailVerified: true,
+        role,
+        isActive: true,
+    });
     console.log(`+ created user: ${email} (${role})`);
     return id;
 }
