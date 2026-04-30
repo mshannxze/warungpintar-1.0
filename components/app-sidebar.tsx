@@ -52,6 +52,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession()
   const pathname = usePathname()
 
+  const userRole = session?.user?.role ?? "cashier"
+
   const userData = session?.user
     ? {
         name: session.user.name || "User",
@@ -84,7 +86,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} pathname={pathname} />
+        <NavMain items={navMain} pathname={pathname} role={userRole} />
         <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

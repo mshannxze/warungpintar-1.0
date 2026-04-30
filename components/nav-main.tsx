@@ -14,19 +14,22 @@ import {
 export function NavMain({
   items,
   pathname,
+  role,
 }: {
   items: {
     title: string
     url: string
     icon?: Icon
+    ownerOnly?: boolean
   }[]
   pathname?: string
+  role?: string
 }) {
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
-          {items.map((item) => {
+          {items.filter((item) => !item.ownerOnly || role === "owner").map((item) => {
             const isActive = pathname?.startsWith(item.url)
             return (
               <SidebarMenuItem key={item.title}>
