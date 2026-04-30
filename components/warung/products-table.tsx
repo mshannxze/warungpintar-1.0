@@ -49,6 +49,8 @@ export function ProductsTable() {
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
+  const [isNewCategory, setIsNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   const load = useCallback(async () => {
     const [prods, cats] = await Promise.all([api.products.list(), api.categories.list()]);
@@ -68,7 +70,12 @@ export function ProductsTable() {
     });
   }, [products, search, filterCategory]);
 
-  function openNew() { setDraft(emptyDraft); setOpen(true); }
+  function openNew() {
+    setDraft(emptyDraft);
+    setIsNewCategory(false);
+    setNewCategoryName("");
+    setOpen(true);
+  }
   function openEdit(p: Product) {
     setDraft({
       id: p.id, sku: p.sku, name: p.name,
@@ -76,6 +83,8 @@ export function ProductsTable() {
       purchasePrice: p.purchasePrice, sellingPrice: p.sellingPrice,
       unit: p.unit, currentStock: p.currentStock, minStock: p.minStock,
     });
+    setIsNewCategory(false);
+    setNewCategoryName("");
     setOpen(true);
   }
 
@@ -86,8 +95,13 @@ export function ProductsTable() {
     }
     setSaving(true);
     try {
+      let categoryId = draft.categoryId;
+      if (isNewCategory && newCategoryName.trim()) {
+        const cat = await api.categories.create({ name: newCategoryName.trim() });
+        categoryId = cat.id;
+      }
       const body: ProductCreateInput = {
-        sku: draft.sku, name: draft.name, categoryId: draft.categoryId,
+        sku: draft.sku, name: draft.name, categoryId,
         purchasePrice: draft.purchasePrice, sellingPrice: draft.sellingPrice,
         unit: draft.unit, currentStock: draft.currentStock, minStock: draft.minStock,
       };
@@ -98,6 +112,8 @@ export function ProductsTable() {
         await api.products.create(body);
         toast.success("Produk ditambahkan");
       }
+      setIsNewCategory(false);
+      setNewCategoryName("");
       setOpen(false);
       await load();
     } catch (e) {
@@ -158,19 +174,36 @@ export function ProductsTable() {
                   <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Kategori</Label>
-                  <Select
-                    value={draft.categoryId ? String(draft.categoryId) : "none"}
-                    onValueChange={(v) => setDraft({ ...draft, categoryId: v === "none" ? null : Number(v) })}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Tanpa kategori</SelectItem>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center justify-between">
+                    <Label>Kategori</Label>
+                    <button
+                      type="button"
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => { setIsNewCategory(!isNewCategory); setNewCategoryName(""); }}
+                    >
+                      {isNewCategory ? "Pilih yang ada" : "Buat baru"}
+                    </button>
+                  </div>
+                  {isNewCategory ? (
+                    <Input
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Nama kategori baru"
+                    />
+                  ) : (
+                    <Select
+                      value={draft.categoryId ? String(draft.categoryId) : "none"}
+                      onValueChange={(v) => setDraft({ ...draft, categoryId: v === "none" ? null : Number(v) })}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Tanpa kategori</SelectItem>
+                        {categories.map((c) => (
+                          <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">

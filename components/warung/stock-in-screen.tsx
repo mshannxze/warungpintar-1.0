@@ -28,6 +28,8 @@ export function StockInScreen() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [history, setHistory] = useState<StockIn[] | null>(null);
   const [supplierId, setSupplierId] = useState<string>("none");
+  const [isNewSupplier, setIsNewSupplier] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState("");
   const [receivedDate, setReceivedDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState<string>("");
   const [lines, setLines] = useState<DraftLine[]>([{ productId: 0, quantity: 1, unitCost: 0 }]);
@@ -79,8 +81,13 @@ export function StockInScreen() {
     }
     setSubmitting(true);
     try {
+      let resolvedSupplierId: number | null = supplierId !== "none" ? Number(supplierId) : null;
+      if (isNewSupplier && newSupplierName.trim()) {
+        const supp = await api.suppliers.create({ name: newSupplierName.trim() });
+        resolvedSupplierId = supp.id;
+      }
       await api.stockIns.create({
-        supplierId: supplierId && supplierId !== "none" ? Number(supplierId) : null,
+        supplierId: resolvedSupplierId,
         receivedDate,
         notes: notes || undefined,
         items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity, unitCost: l.unitCost.toFixed(2) })),
@@ -89,6 +96,9 @@ export function StockInScreen() {
       const first = products[0];
       setLines([{ productId: first?.id ?? 0, quantity: 1, unitCost: Number(first?.purchasePrice ?? 0) }]);
       setNotes("");
+      setIsNewSupplier(false);
+      setNewSupplierName("");
+      setSupplierId("none");
       await load();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Gagal mencatat stok masuk");
@@ -109,14 +119,31 @@ export function StockInScreen() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Supplier</Label>
-              <Select value={supplierId} onValueChange={setSupplierId}>
-                <SelectTrigger><SelectValue placeholder="Pilih supplier (opsional)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Tanpa supplier</SelectItem>
-                  {suppliers.map((s) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label>Supplier</Label>
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => { setIsNewSupplier(!isNewSupplier); setNewSupplierName(""); }}
+                >
+                  {isNewSupplier ? "Pilih yang ada" : "Tambah baru"}
+                </button>
+              </div>
+              {isNewSupplier ? (
+                <Input
+                  value={newSupplierName}
+                  onChange={(e) => setNewSupplierName(e.target.value)}
+                  placeholder="Nama supplier baru"
+                />
+              ) : (
+                <Select value={supplierId} onValueChange={setSupplierId}>
+                  <SelectTrigger><SelectValue placeholder="Pilih supplier (opsional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Tanpa supplier</SelectItem>
+                    {suppliers.map((s) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Tanggal Terima</Label>
