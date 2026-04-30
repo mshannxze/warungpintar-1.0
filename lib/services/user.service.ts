@@ -95,11 +95,24 @@ export class UserService {
         if (id === ctx.userId) {
             throw new HttpError(400, "Tidak bisa menghapus akun sendiri");
         }
-        const result = await db
-            .delete(userTable)
-            .where(eq(userTable.id, id))
-            .returning();
-        if (!result.length) throw new HttpError(404, "Pengguna tidak ditemukan");
+
+        const admin = createAdminClient();
+
+        // Verify the user exists in Supabase Auth (source of truth)
+        const { data: authData, error: authLookupError } =
+            await admin.auth.admin.getUserById(id);
+        if (authLookupError || !authData?.user) {
+            throw new HttpError(404, "Pengguna tidak ditemukan");
+        }
+
+        // Remove from local profile table (ignore if already missing)
+        await db.delete(userTable).where(eq(userTable.id, id));
+
+        // Remove from Supabase Auth so the user cannot log back in
+        const { error: deleteError } = await admin.auth.admin.deleteUser(id);
+        if (deleteError) {
+            throw new HttpError(500, "Gagal menghapus pengguna dari sistem autentikasi");
+        }
     }
 }
 
