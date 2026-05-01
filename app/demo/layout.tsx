@@ -23,10 +23,7 @@ export default async function DemoLayout({ children }: { children: React.ReactNo
                     <FlaskConical className="w-4 h-4 shrink-0" />
                     <span>
                         <Badge variant="secondary" className="mr-2 text-xs">Mode Demo</Badge>
-                        Anda sedang melihat versi demo dengan data contoh. Transaksi tidak tersimpan.{" "}
-                        <Link href="/sign-in" className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-200">
-                            Login untuk akses penuh →
-                        </Link>
+                        Anda sedang melihat versi demo dengan data contoh. Transaksi tidak tersimpan.
                     </span>
                 </div>
                 <div className="flex flex-1 flex-col">{children}</div>
